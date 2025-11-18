@@ -11,12 +11,26 @@ const chatRoutes = require("./routes/chatRoutes");
 const path = require("path")
 const app = express();
 app.use(express.json())
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://teen-talks-frontend.onrender.com" // change to your frontend domain
+];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, curl)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
 
@@ -31,10 +45,10 @@ app.use("/api/v1/chat", chatRoutes);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: allowedOrigins,
+    credentials: true,
     methods: ["GET", "POST"],
   }
-   // change this in production
 });
 
 
