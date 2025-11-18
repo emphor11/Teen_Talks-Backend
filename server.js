@@ -13,7 +13,7 @@ const app = express();
 app.use(express.json())
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://teen-talks-frontend.onrender.com" // change to your frontend domain
+  "https://teen-talks-frontend-kv7z7y4dh-emphor11s-projects.vercel.app" // change to your frontend domain
 ];
 
 app.use(
