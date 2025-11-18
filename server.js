@@ -4,7 +4,6 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const path = require("path");
-
 require("dotenv").config();
 
 const homeRoutes = require("./routes/home");
@@ -16,9 +15,12 @@ const chatRoutes = require("./routes/chatRoutes");
 const app = express();
 app.use(express.json());
 
-// ✅ Allowed frontend origins
+// -----------------------------
+// CORS FIX FOR RENDER + VERCEL
+// -----------------------------
 const allowedOrigins = [
   "http://localhost:5173",
+  "https://teen-talks-frontend.vercel.app",
   "https://teen-talks-frontend-kv7z7y4dh-emphor11s-projects.vercel.app"
 ];
 
@@ -34,18 +36,15 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200); // Preflight success
+    return res.sendStatus(200);
   }
 
   next();
 });
-// ------- END CORS FIX -------
 
-
-
-// -----------------------------------------
+// -----------------------------
 // ROUTES
-// -----------------------------------------
+// -----------------------------
 app.use("/api/v1", homeRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/posts", postRoutes);
@@ -53,9 +52,9 @@ app.use("/api/v1/follow", followRoutes);
 app.use("/api/v1/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/v1/chat", chatRoutes);
 
-// -----------------------------------------
-// SOCKET.IO SERVER
-// -----------------------------------------
+// -----------------------------
+// SERVER + SOCKET.IO
+// -----------------------------
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -63,24 +62,20 @@ const io = new Server(server, {
     origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST"],
-  }
+  },
 });
 
-// -----------------------------------------
-// SOCKET AUTH
-// -----------------------------------------
+// -----------------------------
+// SOCKET AUTH MIDDLEWARE
+// -----------------------------
 io.use((socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
-
-    if (!token) {
-      return next(new Error("Auth error: No token"));
-    }
+    if (!token) return next(new Error("Auth error: No token"));
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     socket.user = { id: decoded.id };
     next();
-
   } catch (err) {
     next(new Error("Auth error: Invalid token"));
   }
@@ -90,9 +85,9 @@ io.use((socket, next) => {
 const userSocketMap = {};
 const socketToUserMap = {};
 
-// -----------------------------------------
-// SOCKET CONNECTIONS
-// -----------------------------------------
+// -----------------------------
+// SOCKET EVENTS
+// -----------------------------
 io.on("connection", (socket) => {
   const userId = Number(socket.user.id);
 
@@ -102,16 +97,12 @@ io.on("connection", (socket) => {
   console.log(`✅ User ${userId} connected (${socket.id})`);
 
   socket.on("disconnect", () => {
-    if (userSocketMap[userId] === socket.id) {
-      delete userSocketMap[userId];
-    }
+    if (userSocketMap[userId] === socket.id) delete userSocketMap[userId];
     delete socketToUserMap[socket.id];
     console.log(`❌ User ${userId} disconnected`);
   });
 
-  // -----------------------------------------
-  // MESSAGE SEND HANDLER
-  // -----------------------------------------
+  // MESSAGE SENDING
   socket.on("sendMessage", async ({ conversationId, receiverId, content }) => {
     try {
       const chatModel = require("./models/Chat");
@@ -121,12 +112,11 @@ io.on("connection", (socket) => {
 
       if (conversationId) {
         const check = await pool.query(
-          `SELECT * FROM conversations WHERE id = $1 AND (user1_id = $2 OR user2_id = $2)`,
+          `SELECT * FROM conversations 
+           WHERE id = $1 AND (user1_id = $2 OR user2_id = $2)`,
           [conversationId, userId]
         );
-
         if (check.rows.length === 0) return;
-
         conv = check.rows[0];
       } else {
         conv = await chatModel.findOrCreateConversation(userId, receiverId);
@@ -142,11 +132,9 @@ io.on("connection", (socket) => {
         created_at: message.created_at,
       };
 
-      // Send to sender (confirmation)
       socket.emit("messageSent", payload);
 
       const rSocket = userSocketMap[receiverId];
-
       if (rSocket) {
         io.to(rSocket).emit("newMessage", payload);
       }
@@ -158,9 +146,9 @@ io.on("connection", (socket) => {
   });
 });
 
-// -----------------------------------------
+// -----------------------------
 // START SERVER
-// -----------------------------------------
+// -----------------------------
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
