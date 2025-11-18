@@ -26,7 +26,7 @@ app.use("/api/v1/chat", chatRoutes);
 // Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" } // change this in production
+  cors: { origin: "http://localhost:5173" } // change this in production
 });
 
 
@@ -172,6 +172,8 @@ io.on("connection", (socket) => {
 });
 
 
-server.listen(3000,()=>{
-    console.log("server started")
-})
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`server started on port ${PORT}`);
+});
