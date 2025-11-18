@@ -39,8 +39,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// ✅ Ensure ALL OPTIONS preflight requests succeed
-app.options("*", cors());
+
 
 // -----------------------------------------
 // ROUTES
