@@ -78,5 +78,26 @@ const getPostsByUserId = async (userId) => {
   return result.rows;
 };
 
+const deletePostById = async (postId, userId) => {
+  // First verify the post belongs to the user
+  const checkResult = await pool.query(
+    "SELECT user_id FROM posts WHERE id = $1",
+    [postId]
+  );
+  if (checkResult.rows.length === 0) {
+    throw new Error("Post not found");
+  }
+  if (checkResult.rows[0].user_id !== userId) {
+    throw new Error("Unauthorized: You can only delete your own posts");
+  }
+  // Delete the post (CASCADE will handle related comments and likes)
+  const result = await pool.query(
+    "DELETE FROM posts WHERE id = $1 RETURNING *",
+    [postId]
+  );
+  return result.rows[0];
+};
 
-module.exports = { createPost, getAllPosts, getPostById ,getPostsByUserId}
+
+
+module.exports = { createPost, getAllPosts, getPostById ,getPostsByUserId,deletePostById}

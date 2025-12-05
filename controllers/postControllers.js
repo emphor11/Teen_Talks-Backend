@@ -1,4 +1,4 @@
-const { createPost, getAllPosts, getPostById, getPostsByUserId, } = require("../models/Post");
+const { createPost, getAllPosts, getPostById, getPostsByUserId, deletePostById} = require("../models/Post");
 const path = require("path");
 
 const addPost = async (req, res) => {
@@ -57,5 +57,29 @@ const getMyPost = async (req,res) =>{
     res.status(500).json({ message: "Server error" });
   }
 }
+
+const deletePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.userId; // From auth middleware
+    await deletePostById(postId, userId);
+    res.status(200).json({
+      success: true,
+      message: "Post deleted successfully"
+    });
+  } catch (err) {
+    console.error("Error deleting post:", err);
+    
+    if (err.message === "Post not found") {
+      return res.status(404).json({ message: err.message });
+    }
+    
+    if (err.message.includes("Unauthorized")) {
+      return res.status(403).json({ message: err.message });
+    }
+    
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
   
-module.exports = { addPost, getPost, fetchPostById ,getMyPost};
+module.exports = { addPost, getPost, fetchPostById ,getMyPost,deletePost};
