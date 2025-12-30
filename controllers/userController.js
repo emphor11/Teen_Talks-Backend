@@ -24,7 +24,8 @@ const getUserById = async (req, res) => {
 
 const profile_pic = async(req,res) =>{
   try {
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const imageUrl = req.file.path;
+    console.log("img",imageUrl)
     await pool.query("UPDATE users SET profile_pic = $1 WHERE id = $2", [imageUrl, req.userId]);
     res.json({ success: true, profile_pic: imageUrl });
   } catch (err) {

@@ -1,24 +1,23 @@
 const multer = require("multer");
-const path = require("path");
 
-// Define storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Folder to save files
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_API_KEY,
+  api_secret: process.env.CLOUD_API_SECRET,
+});
+
+
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "social_posts",
+    allowed_formats: ["jpg", "png", "jpeg", "webp"],
   },
 });
 
-// File filter (accept only images/videos)
-const fileFilter = (req, file, cb) => {
-  const allowed = ["image/jpeg", "image/png", "image/jpg", "video/mp4", "video/mov", "video/webm"];
-  if (allowed.includes(file.mimetype)) cb(null, true);
-  else cb(new Error("Invalid file type"), false);
-};
+const upload = multer({ storage });
 
-const upload = multer({ storage, fileFilter });
-
-module.exports = upload;
+module.exports = upload

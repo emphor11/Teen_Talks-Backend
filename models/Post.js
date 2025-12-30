@@ -16,6 +16,9 @@ const getAllPosts = async () => {
     `SELECT 
   p.id,
   p.user_id,
+  u.name AS author_name,
+  u.id   AS author_id,
+  u.profile_pic AS dp,
   p.content,
   p.media_url,
   p.created_at,
@@ -30,13 +33,19 @@ const getAllPosts = async () => {
         'id', c.id,
         'content', c.content,
         'created_at', c.created_at,
-        'user', JSON_BUILD_OBJECT('id', cu.id, 'name', cu.name)
+        'user', JSON_BUILD_OBJECT(
+          'id', cu.id,
+          'name', cu.name
+        )
       )
     ) FILTER (WHERE c.id IS NOT NULL),
     '[]'
   ) AS comments
 
 FROM posts p
+
+-- ✅ post author join
+JOIN users u ON p.user_id = u.id
 
 -- likes subquery
 LEFT JOIN (
@@ -49,8 +58,13 @@ LEFT JOIN (
 LEFT JOIN comments c ON c.post_id = p.id
 LEFT JOIN users cu ON c.user_id = cu.id
 
-GROUP BY p.id, like_count.count
+GROUP BY 
+  p.id,
+  u.id,
+  like_count.count
+
 ORDER BY p.created_at DESC;
+
 
     `
 

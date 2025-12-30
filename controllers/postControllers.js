@@ -10,7 +10,7 @@ const addPost = async (req, res) => {
     }
 
     // Use only the filename (req.file.filename) or relative path
-    const mediaUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    const mediaUrl = req.file ? req.file.path : null;
     console.log(mediaUrl)
     const result = await createPost(req.userId, content, mediaUrl);
 
